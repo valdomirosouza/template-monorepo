@@ -82,17 +82,17 @@ class PIIFilter:
                 ),
                 "[IP]",
             ),
-            # L3 — Internal
+            # L2 — Sensitive (continued)
             (
                 "TOKEN",
-                PIILevel.L3_INTERNAL,
+                PIILevel.L2_SENSITIVE,
                 # JWT structural shape: three base64url segments separated by dots
                 re.compile(r"\b[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b"),
                 "[TOKEN]",
             ),
             (
                 "UUID",
-                PIILevel.L3_INTERNAL,
+                PIILevel.L2_SENSITIVE,
                 re.compile(
                     r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
                 ),
@@ -119,19 +119,24 @@ class PIIFilter:
     def mask_text(self, text: str, min_level: PIILevel = PIILevel.L2_SENSITIVE) -> str:
         """Replace all PII at or above min_level with replacement tokens.
 
-        Patterns are applied in level order (L1 first) to avoid double-masking.
+        Matches are applied in non-overlapping order: when two patterns span the
+        same region the longest match wins (ties broken by level priority, L1 first).
         The original matched value is never stored after replacement.
         """
         result = text
         offset = 0
-        matches = self.detect(text)
-        for match in matches:
-            if match.level.value > min_level.value:
-                continue
+        candidates = [m for m in self.detect(text) if m.level.value <= min_level.value]
+        # Longest span first; for equal spans prefer higher-priority (lower level value)
+        candidates.sort(key=lambda m: (m.start, -(m.end - m.start), m.level.value))
+        last_end = 0
+        for match in candidates:
+            if match.start < last_end:
+                continue  # skip overlapping match
             start = match.start + offset
             end = match.end + offset
             result = result[:start] + match.replacement_token + result[end:]
             offset += len(match.replacement_token) - (match.end - match.start)
+            last_end = match.end
         return result
 
     def mask_dict(
