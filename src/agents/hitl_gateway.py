@@ -75,9 +75,8 @@ class HITLGateway:
     ) -> None:
         self._audit = audit_logger
         self._broker = broker
-        self._timeout = (
-            timeout_seconds if timeout_seconds is not None else settings.hitl_approval_timeout_seconds
-        )
+        default_timeout = settings.hitl_approval_timeout_seconds
+        self._timeout = timeout_seconds if timeout_seconds is not None else default_timeout
         self._requests: dict[str, HITLRequest] = {}
         self._expired: dict[str, HITLRequest] = {}  # retains expired entries for audit/lookup
         self._lock = asyncio.Lock()

@@ -80,8 +80,9 @@ class TestPIIFilterToken:
         assert synthetic_jwt not in result
 
     def test_masks_uuid(self):
-        result = mask_text("id=00000000-0000-0000-0000-000000000000", min_level=PIILevel.L3_INTERNAL)
-        assert "00000000-0000-0000-0000-000000000000" not in result
+        synthetic_uuid = "00000000-0000-0000-0000-000000000000"
+        result = mask_text(f"id={synthetic_uuid}", min_level=PIILevel.L3_INTERNAL)
+        assert synthetic_uuid not in result
         assert "[UUID]" in result
 
 
