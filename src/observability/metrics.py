@@ -83,6 +83,19 @@ ACTIVE_HITL_REQUESTS = Gauge(
     ["agent_id"],
 )
 
+LLM_TOKEN_BUDGET = Gauge(
+    "llm_tokens_budget_total",
+    "Configured LLM token monthly budget",
+    ["service"],
+)
+
+
+# ── Initialisation helpers ───────────────────────────────────────────────────
+
+def init_budget_gauge(service: str, monthly_token_budget: int) -> None:
+    """Set the static LLM token budget gauge once at startup."""
+    LLM_TOKEN_BUDGET.labels(service).set(monthly_token_budget)
+
 
 # ── Helper functions ─────────────────────────────────────────────────────────
 

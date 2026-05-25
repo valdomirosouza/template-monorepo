@@ -13,6 +13,91 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed (harness audit P1 — production safety)
+
+- `infrastructure/k8s/pdb.yaml`: `minAvailable` corrected from 1 → 2 to satisfy PRR-CAP-003;
+  prevents zero-replica windows during node drains with a 2-replica deployment
+- `infrastructure/monitoring/prometheus/rules/golden-signals.yaml`: `AgentActionErrorRate` query
+  label corrected from `outcome=` to `result=` to match `agent_actions_total` label in `metrics.py`
+- `infrastructure/monitoring/prometheus/rules/golden-signals.yaml`: `LLMTokenBudgetNearing` query
+  fixed to use actual metric names (`llm_tokens_total{token_type="input"}` / `llm_tokens_budget_total`)
+- `src/api/rest/main.py`: `asyncpg.create_pool()` wrapped in `asyncio.wait_for(timeout=15s)` and
+  Redis ping wrapped in `asyncio.wait_for(timeout=5s)` to prevent infinite boot loops on
+  unresponsive dependencies
+- `src/api/rest/main.py`: `InMemoryAuditStorage` fallback now raises `RuntimeError` when
+  `app_env == "production"` — prevents silent audit record loss on pod restart
+
+### Added (harness audit P1 — production safety)
+
+- `src/shared/config.py`: `model_validator` rejects placeholder secrets (`LLM_API_KEY`,
+  `SECRET_KEY`) when `app_env == "production"` — fail-fast at startup prevents misconfigured pods
+  from reaching first LLM call
+- `src/observability/metrics.py`: `LLM_TOKEN_BUDGET` gauge (`llm_tokens_budget_total`) and
+  `init_budget_gauge()` helper — sets the static monthly budget at startup so the
+  `LLMTokenBudgetNearing` alert can compute a ratio
+- `tests/unit/shared/test_config.py`: 7 unit tests covering production secret validation
+  (placeholder rejection, environment scoping, case-insensitivity)
+- `tests/unit/shared/test_metrics.py`: 3 unit tests for `init_budget_gauge()` and
+  `LLM_TOKEN_BUDGET` gauge behaviour
+
+### Added (harness engineering compliance — ADR-0014, ADR-0011)
+
+- `src/shared/retry.py` — `TransientError`, `CircuitBreakerError`, `with_retry()` tenacity decorator
+  (exponential backoff + jitter), `CircuitBreaker` (CLOSED/OPEN/HALF_OPEN state machine),
+  `ResilientLLMClientWrapper` composing timeout + circuit breaker + retry (ADR-0014)
+- `src/shared/llm_client.py`: `TimeoutLLMClientWrapper` applying `asyncio.wait_for` ceiling on
+  all LLM calls — prevents event loop starvation from unresponsive upstream (ADR-0014)
+- `src/guardrails/audit_logger.py`: `PostgresAuditStorage` full implementation backed by asyncpg;
+  parameterized INSERT-only writes, parameterized SELECT with optional filters; wired as default
+  production backend when DB pool is available (ADR-0011)
+- `alembic/versions/0001_create_audit_events.py` — migration creating `audit_events` table with
+  two composite indexes and `REVOKE UPDATE, DELETE` for append-only enforcement (ADR-0011)
+- `alembic/env.py`, `alembic.ini` — Alembic configuration wired to `settings.database_url` (ADR-0002)
+- `src/guardrails/action_limits.py`: `ActionLimiter.check(action_type, parameters)` — unified
+  async entry point combining scope and rate checks; raises `ValueError` on denial (ADR-0014)
+- `src/api/rest/_limiter.py` — shared slowapi `Limiter` singleton keyed by client IP (ADR-0002)
+- `infrastructure/k8s/deployment.yaml` — K8s Deployment with liveness/readiness probes,
+  `preStop` hook, resource requests/limits, and RollingUpdate strategy (ADR-0005)
+- `infrastructure/k8s/service.yaml` — ClusterIP Service for agent-service (ADR-0005)
+- `infrastructure/k8s/pdb.yaml` — PodDisruptionBudget `minAvailable: 1` (PRR-CAP-003) (ADR-0005)
+- `infrastructure/k8s/hpa.yaml` — HorizontalPodAutoscaler 70% CPU target, 2–10 replicas
+  (PRR-CAP-001) (ADR-0005)
+- `tests/chaos/experiments/kill-agent.yaml` — Chaos Toolkit experiment: kill pod, verify
+  Golden Signals recovery (specs/sre/game-day-playbook.md)
+- `tests/chaos/experiments/network-partition.yaml` — Chaos Toolkit experiment: agent ↔ Kafka
+  partition via Toxiproxy, verify DLQ routing and lag recovery (ADR-0007)
+- `tests/chaos/experiments/broker-outage.yaml` — Chaos Toolkit experiment: Kafka StatefulSet
+  scaled to 0, verify producer buffering and zero data loss (ADR-0007)
+- `.github/workflows/chaos-schedule.yml` — weekly scheduled chaos CI running all three
+  experiments against staging (specs/sre/game-day-playbook.md)
+
+### Changed (harness engineering compliance — ADR-0014, ADR-0011)
+
+- `src/api/rest/main.py`: lifespan now initializes asyncpg pool, Redis client, `AuditLogger`
+  (PostgresAuditStorage in prod, InMemoryAuditStorage on failed pool), and `HITLGateway` in
+  `app.state`; mounts `/metrics` ASGI app; registers slowapi middleware and rate-limit handler;
+  wires OTel `FastAPIInstrumentor` (ADR-0002, ADR-0003, ADR-0011)
+- `src/api/rest/routers/health.py`: `/ready` performs real asyncpg and Redis connectivity
+  checks with `asyncio.wait_for` timeouts; returns 503 when either dependency is unreachable
+  (ADR-0002)
+- `src/api/rest/routers/hitl.py`: implemented `get_hitl_gateway` dependency, `hitl_status`
+  returning real pending count from `app.state.hitl_gateway`, and `submit_decision` calling
+  `gateway.record_decision()` (ADR-0011)
+- `src/api/rest/routers/requests.py`: `submit_request` decorated with
+  `@limiter.limit("{rate_limit_requests_per_minute}/minute")` to enforce per-IP rate limit
+  (ADR-0002)
+- `src/agents/hitl_gateway.py`: added `asyncio.Lock` protecting `_requests` dict; all
+  read/write operations use phase-separated locking (state transition under lock, I/O outside)
+  (ADR-0011)
+- `src/agents/orchestrator/orchestrator.py`: `_act()` now `await`s `action_limiter.check()`
+  using the new unified method signature (ADR-0014)
+- `src/shared/config.py`: added `llm_call_timeout_seconds`, `redis_call_timeout_seconds`,
+  `shutdown_drain_seconds`, `llm_circuit_breaker_threshold`, `llm_circuit_breaker_reset_seconds`,
+  `llm_retry_max_attempts` (ADR-0014)
+- `Dockerfile`: replaced `CMD` with `ENTRYPOINT` (exec form) and added `STOPSIGNAL SIGTERM`
+  so uvicorn receives signals directly as PID 1 (ADR-0005)
+- `pyproject.toml`: added `tenacity>=8.3.0` and `slowapi>=0.1.9` to production dependencies
+
 ### Added
 
 - `.secrets.baseline` criado para habilitar `detect-secrets` no pre-commit hook (P2-01)
