@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     hitl_approval_timeout_seconds: int = 3600
     hitl_risk_threshold: float = 0.4           # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
     hotl_override_window_seconds: int = 300    # 5-min override window per specs/ai/hitl-hotl.md
+    hitl_max_pending_requests: int = 500       # hard cap on in-memory HITL request store
     llm_call_timeout_seconds: float = 30.0          # asyncio.wait_for ceiling on LLM API calls
     redis_call_timeout_seconds: float = 5.0         # asyncio.wait_for ceiling on Redis pipeline calls
     shutdown_drain_seconds: int = 5                  # grace period before pool teardown (LB deregister)
@@ -65,6 +66,9 @@ class Settings(BaseSettings):
     feature_flag_provider: str = "local"
     feature_flag_sdk_key: str = ""
     autonomous_mode_enabled: bool = False
+
+    # ── Concurrency ───────────────────────────────────────────────────────────
+    max_concurrent_agents: int = 20            # asyncio.Semaphore cap on simultaneous agent coroutines
 
     # ── Security ──────────────────────────────────────────────────────────────
     secret_key: str = "placeholder-set-in-env"

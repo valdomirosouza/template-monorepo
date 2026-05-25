@@ -13,6 +13,41 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (harness audit P2 — operational resilience)
+
+- `src/shared/db_client.py`: `ResilientDBPool` — wraps `asyncpg.Pool` with per-call
+  `asyncio.wait_for` timeout, exponential-backoff retry via `with_retry`, and three-state
+  circuit breaker via `CircuitBreaker`; reuses existing patterns from `retry.py` (ADR-0002)
+- `src/api/rest/main.py`: `asyncio.Semaphore(settings.max_concurrent_agents)` created at
+  startup — caps simultaneous agent coroutines to prevent event-loop starvation under burst load
+- `src/observability/metrics.py`: `AGENT_SEMAPHORE_WAITING` gauge (requests waiting for a slot)
+  and `DLQ_MESSAGES_COUNTER` counter (messages routed to Dead Letter Queue)
+- `tests/unit/shared/test_db_client.py`: 9 unit tests — happy path, circuit breaker states,
+  timeout propagation
+- `tests/unit/agents/test_hitl_gateway.py`: 7 unit tests — hard cap enforcement, post-expiry
+  eviction, slot recycling after eviction
+- `tests/unit/api/test_requests_semaphore.py`: 4 unit tests — 503 + `Retry-After` when all
+  slots occupied, 202 when capacity available, backwards-compatibility without semaphore state
+
+### Fixed (harness audit P2 — operational resilience)
+
+- `src/api/rest/main.py`: DB pool now wrapped in `ResilientDBPool` — every query gets
+  timeout + retry + circuit breaker protection (previously unguarded)
+- `src/guardrails/audit_logger.py`: `PostgresAuditStorage` type annotation updated to accept
+  `ResilientDBPool` alongside `asyncpg.Pool` — no runtime behaviour change
+- `src/agents/hitl_gateway.py`: `expire_stale_requests()` now evicts expired entries from
+  `_requests` dict after marking them EXPIRED — prevents unbounded memory growth
+- `src/agents/hitl_gateway.py`: `submit_for_approval()` raises `HITLGatewayError` when store
+  reaches `settings.hitl_max_pending_requests` — explicit backpressure instead of silent OOM
+- `src/shared/config.py`: added `max_concurrent_agents: int = 20` and
+  `hitl_max_pending_requests: int = 500` configuration fields
+- `src/api/rest/routers/requests.py`: endpoint returns 503 + `Retry-After: 5` header when
+  `agent_semaphore._value == 0` — operationally visible backpressure
+- `tests/chaos/experiments/network-partition.yaml`: DLQ assertion regex escaped and aligned
+  to real metric name `dlq_messages_total`
+- `.github/workflows/chaos-schedule.yml`: schedule updated to weekday nightly runs
+  (`0 2 * * 1-5`) — chaos experiments now committed and active in CI
+
 ### Fixed (harness audit P1 — production safety)
 
 - `infrastructure/k8s/pdb.yaml`: `minAvailable` corrected from 1 → 2 to satisfy PRR-CAP-003;

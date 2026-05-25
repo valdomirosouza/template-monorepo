@@ -9,14 +9,18 @@ Flow: POST /v1/requests → validate → publish domain.request.created → retu
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
+from src.api.rest._limiter import limiter
 from src.guardrails.pii_filter import mask_dict
 from src.observability.logger import get_logger
+from src.observability.metrics import AGENT_SEMAPHORE_WAITING
+from src.shared.config import settings
 
 logger = get_logger("api.requests")
 router = APIRouter(tags=["requests"])
@@ -40,12 +44,23 @@ class RequestOut(BaseModel):
     status_code=status.HTTP_202_ACCEPTED,
     summary="Submit a domain request for async processing",
 )
-async def submit_request(body: RequestIn) -> RequestOut:
+@limiter.limit(f"{settings.rate_limit_requests_per_minute}/minute")
+async def submit_request(request: Request, body: RequestIn) -> RequestOut:
     """Accept a request and publish it to the async processing pipeline.
 
     Returns 202 Accepted immediately. Poll GET /v1/requests/{id} for the result.
     PII in the request text is masked before the event is published to Kafka.
+    Returns 503 with Retry-After header when all agent slots are occupied.
     """
+    sem: asyncio.Semaphore = getattr(request.app.state, "agent_semaphore", None)
+    if sem is not None and sem._value == 0:
+        AGENT_SEMAPHORE_WAITING.labels(settings.service_name).inc()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Agent capacity exhausted — retry later",
+            headers={"Retry-After": "5"},
+        )
+
     request_id = str(uuid.uuid4())
 
     masked_payload = mask_dict({"request_text": body.request_text, "priority": body.priority})

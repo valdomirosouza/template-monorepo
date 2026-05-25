@@ -89,6 +89,18 @@ LLM_TOKEN_BUDGET = Gauge(
     ["service"],
 )
 
+AGENT_SEMAPHORE_WAITING = Gauge(
+    "agent_semaphore_waiting",
+    "Requests currently waiting for an available agent slot",
+    ["service"],
+)
+
+DLQ_MESSAGES_COUNTER = Counter(
+    "dlq_messages_total",
+    "Total messages routed to Dead Letter Queue",
+    ["consumer_group", "topic"],
+)
+
 
 # ── Initialisation helpers ───────────────────────────────────────────────────
 

@@ -28,6 +28,7 @@ from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage, Postg
 from src.observability.metrics import init_budget_gauge
 from src.observability.otel_setup import setup_telemetry
 from src.shared.config import settings
+from src.shared.db_client import ResilientDBPool
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning("OTel FastAPI instrumentation failed: %s", exc)
 
-    # Initialize DB connection pool (15 s hard timeout prevents infinite boot loops)
+    # Initialize DB connection pool (15 s hard timeout prevents infinite boot loops).
+    # Wrapped in ResilientDBPool to add per-call timeout, retry, and circuit breaker.
     try:
-        app.state.db_pool = await asyncio.wait_for(
+        _raw_pool = await asyncio.wait_for(
             asyncpg.create_pool(
                 settings.database_url,
                 min_size=2,
@@ -57,6 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             ),
             timeout=15.0,
         )
+        app.state.db_pool = ResilientDBPool(_raw_pool)
     except Exception as exc:
         logger.warning("DB pool creation failed — readiness will return 503: %s", exc)
         app.state.db_pool = None
@@ -93,6 +96,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         audit_logger=app.state.audit_logger,
         broker=None,
     )
+
+    # Agent concurrency cap — limits simultaneous coroutines to prevent event-loop starvation
+    app.state.agent_semaphore = asyncio.Semaphore(settings.max_concurrent_agents)
 
     yield
 
