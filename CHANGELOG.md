@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (documentation — post v1.0.0 audit)
+
+- `infrastructure/README.md`: criado — overview de K8s manifests, probe configuration, HPA custom metrics, related ADRs
+- `infrastructure/feature-flags/README.md`: criado — arquitetura OpenFeature + flagd, catálogo de flags, instruções para adicionar nova flag
+- `SETUP/013-prompt.md`: criado — prompt de scaffolding para a camada de resiliência e maturidade de plataforma (retry, HITL store, feature flags, K8s, alembic, chaos experiments)
+
+### Changed (documentation — post v1.0.0 audit)
+
+- `README.md`: versão atualizada para 1.0.0; ADR-0014 e ADR-0015 adicionados à seção de ADRs chave; seção Feature Flags criada; CUJ-001 dashboard adicionado à tabela de Observability; RB-003-hitl-recovery adicionado à seção On-call; estrutura de repositório atualizada com novos módulos; seção "Harness Engineering & Design Audit" adicionada com scorecard D1–D8
+- `CLAUDE.md`: `src/agents/hitl_store.py` e `src/shared/feature_flags.py` adicionados à tabela de File Ownership; `infrastructure/feature-flags/` adicionado à governança; rule 3.3 atualizada com referência ao controle HOTL via feature flag (ADR-0015)
+- `docs/adr/README.md`: ADR-0015 (Feature Flag Strategy) adicionado ao Master Index
+- `MONOREPO-STRUCTURE-EN.md`: `src/agents/` atualizado com `hitl_store.py` e subdiretório `harness/`; `src/shared/` atualizado com `retry.py`, `db_client.py`, `llm_client.py`, `feature_flags.py`
+- `SETUP/README.md`: prompts 011 (Validation) e 012 (Postmortem) com descrições corrigidas (estavam trocadas); prompt 013 adicionado; file map atualizado com todos os arquivos das waves P1/P2/P3; versão do template bumped para 2.2.0
+
+---
+
+## [1.0.0] - 2026-05-25
+
 ### Added (P3 Wave 3c — platform maturity)
 
 - `src/shared/feature_flags.py`: `is_autonomous_mode_enabled()` — thin OpenFeature SDK
@@ -362,5 +380,6 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/org/project/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/org/project/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/org/project/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/org/project/releases/tag/v0.1.0
