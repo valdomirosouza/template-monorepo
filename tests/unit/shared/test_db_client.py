@@ -7,15 +7,15 @@ ADR:  ADR-0002 (Technology Stack Selection)
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.shared.db_client import ResilientDBPool
 from src.shared.retry import CircuitBreaker, CircuitBreakerError, TransientError
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_pool(return_value: object = "ok") -> MagicMock:
     pool = MagicMock()
@@ -27,6 +27,7 @@ def _make_pool(return_value: object = "ok") -> MagicMock:
 
 
 # ── Happy path ────────────────────────────────────────────────────────────────
+
 
 class TestResilientDBPoolHappyPath:
     @pytest.mark.asyncio
@@ -67,6 +68,7 @@ class TestResilientDBPoolHappyPath:
 
 # ── Circuit breaker ───────────────────────────────────────────────────────────
 
+
 class TestResilientDBPoolCircuitBreaker:
     @pytest.mark.asyncio
     async def test_open_circuit_raises_circuit_breaker_error(self):
@@ -105,6 +107,7 @@ class TestResilientDBPoolCircuitBreaker:
 
 
 # ── Timeout ───────────────────────────────────────────────────────────────────
+
 
 class TestResilientDBPoolTimeout:
     @pytest.mark.asyncio

@@ -68,7 +68,9 @@ class PromptInjectionGuard:
 
             scores: dict[RejectionReason, float] = {
                 RejectionReason.STRUCTURAL_ANOMALY: self._check_structural_anomaly(user_input),
-                RejectionReason.ROLE_OVERRIDE_PATTERN: self._check_role_override_pattern(user_input),
+                RejectionReason.ROLE_OVERRIDE_PATTERN: self._check_role_override_pattern(
+                    user_input
+                ),
                 RejectionReason.REPETITIVE_PATTERN: self._check_repetition(user_input),
                 RejectionReason.ENCODING_ANOMALY: self._check_encoding(user_input),
             }
@@ -127,7 +129,7 @@ class PromptInjectionGuard:
             freq[ch] = freq.get(ch, 0) + 1
         total = len(text)
         entropy = -sum((c / total) * math.log2(c / total) for c in freq.values())
-        # Normal English text has entropy ~4.0–4.5 bits/char
+        # Normal English text has entropy ~4.0-4.5 bits/char
         # Highly repetitive content has entropy < 2.0
         return max(0.0, min(1.0, (2.5 - entropy) / 2.5))
 
@@ -136,7 +138,9 @@ class PromptInjectionGuard:
         if not text:
             return 0.0
         null_bytes = text.count("\x00")
-        control_chars = sum(1 for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t")
+        control_chars = sum(
+            1 for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t"
+        )
         score = min((null_bytes + control_chars) / max(len(text), 1) * 100, 1.0)
         return score
 

@@ -7,16 +7,13 @@ ADR:  ADR-0002 (Technology Stack Selection)
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock
 
-import pytest
 from fastapi.testclient import TestClient
 
 from src.api.rest.main import app
-from src.shared.config import settings
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _client_with_semaphore(available_slots: int) -> TestClient:
     """Return a TestClient with the agent semaphore pre-configured."""
@@ -30,6 +27,7 @@ def _client_with_semaphore(available_slots: int) -> TestClient:
 
 
 # ── Semaphore behaviour ───────────────────────────────────────────────────────
+
 
 class TestSubmitRequestSemaphore:
     def test_returns_503_when_semaphore_exhausted(self):

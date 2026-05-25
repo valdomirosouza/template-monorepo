@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
 from src.observability.logger import get_logger
@@ -20,6 +20,7 @@ from src.shared.models import AuditEvent
 
 if TYPE_CHECKING:
     import asyncpg
+
     from src.shared.db_client import ResilientDBPool
 
 logger = get_logger("audit_logger")
@@ -96,7 +97,7 @@ class PostgresAuditStorage:
         FROM audit_events
     """
 
-    def __init__(self, pool: "asyncpg.Pool | ResilientDBPool") -> None:
+    def __init__(self, pool: asyncpg.Pool | ResilientDBPool) -> None:
         self._pool = pool
 
     async def append(self, event: AuditEvent) -> None:

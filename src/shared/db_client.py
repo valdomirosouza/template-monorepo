@@ -48,7 +48,7 @@ class ResilientDBPool:
 
     def __init__(
         self,
-        pool: "asyncpg.Pool",
+        pool: asyncpg.Pool,
         timeout: float = _DEFAULT_TIMEOUT,
         circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
@@ -92,7 +92,7 @@ class ResilientDBPool:
             result = await asyncio.wait_for(method(*args), timeout=self._timeout)
             self._cb.record_success()
             return result
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             self._cb.record_failure()
             raise TransientError(f"DB call timed out after {self._timeout}s: {exc}") from exc
         except Exception as exc:

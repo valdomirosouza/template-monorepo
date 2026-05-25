@@ -1,4 +1,4 @@
-"""PII detection and masking with L1–L4 classification.
+"""PII detection and masking with L1-L4 classification.
 
 Detection uses structural format patterns only — no real personal data is stored
 in this module. Masking tokens replace matched values; originals are never logged
@@ -17,15 +17,15 @@ from typing import Any
 
 
 class PIILevel(Enum):
-    L1_CRITICAL = 1   # CPF/SSN, health data, biometric — never in logs or LLM
+    L1_CRITICAL = 1  # CPF/SSN, health data, biometric — never in logs or LLM
     L2_SENSITIVE = 2  # name, email, phone, IP — mask in logs
-    L3_INTERNAL = 3   # session token, UUID — internal audit only
-    L4_PUBLIC = 4     # declared role, org name — no special handling
+    L3_INTERNAL = 3  # session token, UUID — internal audit only
+    L4_PUBLIC = 4  # declared role, org name — no special handling
 
 
 @dataclass
 class PIIMatch:
-    field_type: str         # e.g. "EMAIL", "CPF", "IP"
+    field_type: str  # e.g. "EMAIL", "CPF", "IP"
     level: PIILevel
     start: int
     end: int
@@ -56,7 +56,7 @@ class PIIFilter:
             (
                 "CARD",
                 PIILevel.L1_CRITICAL,
-                # Structural: 13–19 digit groups separated by spaces or dashes
+                # Structural: 13-19 digit groups separated by spaces or dashes
                 re.compile(r"\b(?:\d[ \-]?){13,19}\d\b"),
                 "[CARD]",
             ),
@@ -70,9 +70,7 @@ class PIIFilter:
             (
                 "PHONE",
                 PIILevel.L2_SENSITIVE,
-                re.compile(
-                    r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"
-                ),
+                re.compile(r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"),
                 "[PHONE]",
             ),
             (

@@ -7,9 +7,7 @@ All test inputs use clearly synthetic, obviously fake data.
 No real personal data appears in this file.
 """
 
-import pytest
-
-from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_text
+from src.guardrails.pii_filter import PIILevel, mask_dict, mask_text
 
 
 class TestPIIFilterEmail:

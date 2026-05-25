@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -78,7 +78,7 @@ async def submit_request(request: Request, body: RequestIn) -> RequestOut:
     return RequestOut(
         request_id=request_id,
         status="queued",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         message="Request accepted. Poll /v1/requests/{request_id} for status.",
     )
 

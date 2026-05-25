@@ -8,14 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 import asyncpg
 import redis.asyncio as redis_async
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -42,9 +41,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Wire OTel HTTP instrumentation after app is created
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-        FastAPIInstrumentor().instrument_app(
-            app, excluded_urls="/health,/ready,/metrics"
-        )
+
+        FastAPIInstrumentor().instrument_app(app, excluded_urls="/health,/ready,/metrics")
     except Exception as exc:
         logger.warning("OTel FastAPI instrumentation failed: %s", exc)
 

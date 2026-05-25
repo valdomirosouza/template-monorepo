@@ -10,13 +10,12 @@ ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
 from __future__ import annotations
 
 import asyncio
-import uuid
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import Any
 
-from src.guardrails.audit_logger import AuditLogger, AuditWriteError
+from src.guardrails.audit_logger import AuditLogger
 from src.observability.logger import get_logger
 from src.observability.metrics import (
     ACTIVE_HITL_REQUESTS,
@@ -28,7 +27,7 @@ from src.shared.models import AuditEvent
 logger = get_logger("hitl_gateway")
 
 
-class HITLStatus(str, Enum):
+class HITLStatus(StrEnum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -85,7 +84,7 @@ class HITLGateway:
 
         Raises HITLGatewayError if the store has reached hitl_max_pending_requests.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         request.created_at = now
         request.expires_at = now + timedelta(seconds=self._timeout)
         request.status = HITLStatus.PENDING
@@ -229,7 +228,8 @@ class HITLGateway:
         expired_ids: list[str] = []
         async with self._lock:
             candidates = [
-                req for req in self._requests.values()
+                req
+                for req in self._requests.values()
                 if req.status == HITLStatus.PENDING and self._is_expired(req)
             ]
         for req in candidates:
@@ -271,4 +271,4 @@ class HITLGateway:
         )
 
     def _is_expired(self, request: HITLRequest) -> bool:
-        return datetime.now(timezone.utc) >= request.expires_at
+        return datetime.now(UTC) >= request.expires_at

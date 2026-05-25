@@ -20,6 +20,7 @@ from typing import Any
 from src.agents.harness.context_manager import ContextManager
 from src.agents.harness.evaluator import EvaluatorAgent
 from src.agents.harness.models import (
+    EvaluatorScore,
     GeneratorArtifact,
     HarnessResult,
     ProductSpec,
@@ -46,8 +47,8 @@ class HarnessCoordinator:
         audit_logger: AuditLogger,
         planner: PlannerAgent,
         evaluator: EvaluatorAgent,
-        orchestrator: Any,     # AgentOrchestrator — Any to avoid circular import
-        hitl_gateway: Any,     # HITLGateway
+        orchestrator: Any,  # AgentOrchestrator — Any to avoid circular import
+        hitl_gateway: Any,  # HITLGateway
         llm_client: Any,
     ) -> None:
         self._audit = audit_logger
@@ -56,9 +57,7 @@ class HarnessCoordinator:
         self._orchestrator = orchestrator
         self._hitl = hitl_gateway
         self._llm = llm_client
-        self._ctx_manager = ContextManager(
-            reset_threshold=settings.harness_context_reset_threshold
-        )
+        self._ctx_manager = ContextManager(reset_threshold=settings.harness_context_reset_threshold)
 
     async def run(self, brief: TaskBrief) -> HarnessResult:
         """Execute the harness pipeline for the given brief."""
@@ -212,7 +211,8 @@ class HarnessCoordinator:
                 return artifact, score, iteration, True
 
         # Should not be reachable, but satisfies the type checker
-        return last_artifact or GeneratorArtifact(sprint_id=contract.sprint_id), last_score, 0, False
+        fallback = last_artifact or GeneratorArtifact(sprint_id=contract.sprint_id)
+        return fallback, last_score, 0, False
 
     async def _generate(
         self,
@@ -317,7 +317,6 @@ class HarnessCoordinator:
 
     async def _review_spec_with_hitl(self, brief: TaskBrief, spec: ProductSpec) -> None:
         """Optional HITL review of ProductSpec before sprint execution begins."""
-        import json
 
         await self._audit.log_event(
             AuditEvent(

@@ -104,12 +104,14 @@ DLQ_MESSAGES_COUNTER = Counter(
 
 # ── Initialisation helpers ───────────────────────────────────────────────────
 
+
 def init_budget_gauge(service: str, monthly_token_budget: int) -> None:
     """Set the static LLM token budget gauge once at startup."""
     LLM_TOKEN_BUDGET.labels(service).set(monthly_token_budget)
 
 
 # ── Helper functions ─────────────────────────────────────────────────────────
+
 
 def record_request(
     service: str,

@@ -7,7 +7,7 @@ ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,8 +19,8 @@ from src.agents.hitl_gateway import (
     HITLStatus,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_gateway(max_pending: int = 500) -> HITLGateway:
     audit = MagicMock()
@@ -28,12 +28,13 @@ def _make_gateway(max_pending: int = 500) -> HITLGateway:
     gw = HITLGateway(audit_logger=audit, broker=None)
     # Patch the settings value used for the cap check
     import src.agents.hitl_gateway as mod
+
     mod.settings.hitl_max_pending_requests = max_pending
     return gw
 
 
 def _make_request(agent_id: str = "agent-test") -> HITLRequest:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return HITLRequest(
         request_id=str(uuid.uuid4()),
         agent_id=agent_id,
@@ -47,6 +48,7 @@ def _make_request(agent_id: str = "agent-test") -> HITLRequest:
 
 
 # ── Hard cap ──────────────────────────────────────────────────────────────────
+
 
 class TestHITLGatewayHardCap:
     @pytest.mark.asyncio
@@ -80,11 +82,12 @@ class TestHITLGatewayHardCap:
 
 # ── Eviction ──────────────────────────────────────────────────────────────────
 
+
 class TestHITLGatewayEviction:
     @pytest.mark.asyncio
     async def test_expire_stale_requests_evicts_from_store(self):
         gw = _make_gateway()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         req = HITLRequest(
             request_id=str(uuid.uuid4()),
@@ -119,7 +122,7 @@ class TestHITLGatewayEviction:
     @pytest.mark.asyncio
     async def test_eviction_frees_slot_for_new_request(self):
         gw = _make_gateway(max_pending=1)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         expired_req = HITLRequest(
             request_id=str(uuid.uuid4()),
@@ -144,7 +147,7 @@ class TestHITLGatewayEviction:
     @pytest.mark.asyncio
     async def test_expired_request_status_is_set_to_expired(self):
         gw = _make_gateway()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         req = HITLRequest(
             request_id=str(uuid.uuid4()),
