@@ -39,7 +39,7 @@ class HITLRequest:
     request_id: str
     agent_id: str
     action_type: str
-    action_parameters: dict
+    action_parameters: dict[str, Any]
     risk_score: float
     context_summary: str  # PII-masked summary for the human reviewer
     created_at: datetime

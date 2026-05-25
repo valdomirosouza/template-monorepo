@@ -14,7 +14,9 @@ Context resets: ContextManager decides compaction vs reset at each agent boundar
 
 from __future__ import annotations
 
+import json
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.agents.harness.context_manager import ContextManager
@@ -306,12 +308,16 @@ class HarnessCoordinator:
         # Route through HITLGateway — blocks until human decision or timeout
         from src.agents.hitl_gateway import HITLRequest
 
+        now = datetime.now(UTC)
         request = HITLRequest(
+            request_id=str(uuid.uuid4()),
             agent_id="harness.coordinator",
             action_type="harness_sprint_escalation",
-            action_params=hitl_payload,
-            risk_score=1.0,  # max — escalation is always high-risk
-            trace_id=brief.trace_id or "",
+            action_parameters=hitl_payload,
+            risk_score=1.0,
+            context_summary=json.dumps(hitl_payload)[:500],
+            created_at=now,
+            expires_at=now + timedelta(seconds=settings.hitl_approval_timeout_seconds),
         )
         await self._hitl.submit_for_approval(request)
 
@@ -334,17 +340,22 @@ class HarnessCoordinator:
 
         from src.agents.hitl_gateway import HITLRequest
 
+        spec_payload: dict[str, Any] = {
+            "detailed_description": spec.detailed_description[:1000],
+            "sprint_contracts": [
+                {"sprint_id": c.sprint_id, "objectives": c.objectives}
+                for c in spec.sprint_contracts
+            ],
+        }
+        now = datetime.now(UTC)
         request = HITLRequest(
+            request_id=str(uuid.uuid4()),
             agent_id="harness.coordinator",
             action_type="planner_spec_review",
-            action_params={
-                "detailed_description": spec.detailed_description[:1000],
-                "sprint_contracts": [
-                    {"sprint_id": c.sprint_id, "objectives": c.objectives}
-                    for c in spec.sprint_contracts
-                ],
-            },
+            action_parameters=spec_payload,
             risk_score=0.5,
-            trace_id=brief.trace_id or "",
+            context_summary=json.dumps(spec_payload)[:500],
+            created_at=now,
+            expires_at=now + timedelta(seconds=settings.hitl_approval_timeout_seconds),
         )
         await self._hitl.submit_for_approval(request)

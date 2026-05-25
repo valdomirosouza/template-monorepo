@@ -59,13 +59,15 @@ class ResilientDBPool:
     # ── Public interface ──────────────────────────────────────────────────────
 
     async def execute(self, query: str, *args: Any) -> str:
-        return await self._call(self._pool.execute, query, *args)
+        result: str = await self._call(self._pool.execute, query, *args)
+        return result
 
     async def fetchval(self, query: str, *args: Any) -> Any:
         return await self._call(self._pool.fetchval, query, *args)
 
     async def fetch(self, query: str, *args: Any) -> list[Any]:
-        return await self._call(self._pool.fetch, query, *args)
+        result: list[Any] = await self._call(self._pool.fetch, query, *args)
+        return result
 
     def acquire(self) -> Any:
         """Return the pool's acquire() context manager for multi-statement transactions.

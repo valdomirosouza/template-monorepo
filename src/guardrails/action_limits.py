@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 from src.observability.logger import get_logger
 from src.shared.config import settings
@@ -109,7 +110,7 @@ class ActionLimiter:
         self,
         agent_id: str,
         action_type: str,
-        parameters: dict,
+        parameters: dict[str, Any],
     ) -> tuple[bool, str]:
         """Return (allowed, reason). Validates action type and affected record count."""
 
@@ -132,7 +133,7 @@ class ActionLimiter:
 
         return True, "ok"
 
-    async def check(self, action_type: str, parameters: dict) -> None:
+    async def check(self, action_type: str, parameters: dict[str, Any]) -> None:
         """Unified guardrail: scope limit then rate limit. Raises ValueError on denial.
 
         Called by AgentOrchestrator before every action execution.

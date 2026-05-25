@@ -52,7 +52,7 @@ async def submit_request(request: Request, body: RequestIn) -> RequestOut:
     PII in the request text is masked before the event is published to Kafka.
     Returns 503 with Retry-After header when all agent slots are occupied.
     """
-    sem: asyncio.Semaphore = getattr(request.app.state, "agent_semaphore", None)
+    sem: asyncio.Semaphore | None = getattr(request.app.state, "agent_semaphore", None)
     if sem is not None and sem._value == 0:
         AGENT_SEMAPHORE_WAITING.labels(settings.service_name).inc()
         raise HTTPException(

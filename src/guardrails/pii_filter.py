@@ -140,7 +140,7 @@ class PIIFilter:
         min_level: PIILevel = PIILevel.L2_SENSITIVE,
     ) -> dict[str, Any]:
         """Recursively mask PII in all string values of a dictionary."""
-        return self._mask_value(data, min_level)
+        return self._mask_value(data, min_level)  # type: ignore[no-any-return]
 
     def _mask_value(self, value: Any, min_level: PIILevel) -> Any:
         if isinstance(value, str):

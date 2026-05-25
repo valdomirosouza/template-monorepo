@@ -22,7 +22,7 @@ try:
     from src.guardrails.pii_filter import mask_dict as _mask_dict
 except ImportError:  # during initial scaffold / unit tests without guardrails
 
-    def _mask_dict(data: dict) -> dict:  # type: ignore[misc]
+    def _mask_dict(data: dict[str, object]) -> dict[str, object]:  # type: ignore[misc]
         return data
 
 
