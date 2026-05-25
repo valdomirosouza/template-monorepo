@@ -125,6 +125,7 @@ jobs:
           KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
           KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
           KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+          CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
         options: >-
           --health-cmd "kafka-broker-api-versions --bootstrap-server localhost:9092"
           --health-interval 10s
