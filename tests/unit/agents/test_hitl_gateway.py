@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.agents.hitl_gateway import (
+    HITLDecision,
     HITLGateway,
     HITLGatewayError,
     HITLRequest,
@@ -165,3 +166,61 @@ class TestHITLGatewayEviction:
         await gw.expire_stale_requests()
 
         assert req.status == HITLStatus.EXPIRED
+
+    @pytest.mark.asyncio
+    async def test_expired_request_still_retrievable_via_get_request(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-a",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        await gw.expire_stale_requests()
+
+        retrieved = await gw.get_request(req.request_id)
+        assert retrieved is not None
+        assert retrieved.status == HITLStatus.EXPIRED
+        assert req.request_id not in gw._requests
+        assert req.request_id in gw._expired
+
+    @pytest.mark.asyncio
+    async def test_mid_decision_expiry_moves_request_to_expired_store(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-b",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        with pytest.raises(HITLGatewayError, match="expired"):
+            await gw.record_decision(
+                HITLDecision(
+                    request_id=req.request_id,
+                    decision=HITLStatus.APPROVED,
+                    approver_id="reviewer-01",
+                    rationale="Late.",
+                    decided_at=now,
+                )
+            )
+
+        assert req.request_id not in gw._requests
+        assert req.request_id in gw._expired
