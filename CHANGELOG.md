@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (multi-language template — Block 1)
+
+- `docs/quickstart/java-backend.md`: Java/Spring Boot developer quickstart — prerequisites, project layout, setup steps, resilience patterns (Resilience4j), PII masking, HITL REST client, Kafka consumer, structured logging, Testcontainers conventions, key ADRs
+- `docs/quickstart/go-backend.md`: Go developer quickstart — prerequisites, project layout, setup steps, circuit breaker (gobreaker), context timeouts, PII masking, HITL REST client, structured slog, OTel Go SDK, testcontainers-go conventions, key ADRs
+- `docs/quickstart/frontend.md`: React/Next.js developer quickstart — prerequisites, project layout, generated API client (openapi-generator), React Query + HITL polling, PII masking in UI, OTel browser tracing, Jest + Playwright testing conventions, key ADRs
+- `docs/quickstart/jobs-worker.md`: Scheduled jobs & batch worker quickstart — BaseJob interface, APScheduler registration, idempotency + checkpointing pattern, HITL routing from batch context, job README requirements, K8s CronJob deployment
+- `services.yaml`: service catalog (root) — all services with language, type, port, image, owner, Kafka publish/subscribe topics, runtime dependencies, governing ADRs; topic catalogue with schema paths, partitions, retention
+- `.devcontainer/devcontainer.json`: multi-language devcontainer — Python 3.12, Java 21, Go 1.23, Node 20, Docker-in-Docker, kubectl + helm; VS Code extensions for all languages; port forwarding for all services and infra
+- `.devcontainer/post-create.sh`: automated post-create script — installs uv, pnpm, Go tools (air, golangci-lint, protoc plugins), Java/Maven verification, pre-commit hooks, copies .env.example, starts infra stack, runs Alembic migrations
+
+### Changed (multi-language template — Block 1)
+
+- `Makefile`: extended with per-language targets (`test-python`, `test-java`, `test-go`, `test-frontend`, `lint-*`, `format-*`, `build-*`, `run-*`); added `gen-proto-go`, `gen-api-client-ts`, `new-service` scaffold; legacy aliases preserved; `help` column width updated; `SERVICE` and `APP` variables added
+
 ### Added (documentation — post v1.0.0 audit)
 
 - `infrastructure/README.md`: criado — overview de K8s manifests, probe configuration, HPA custom metrics, related ADRs
