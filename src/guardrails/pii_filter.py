@@ -92,7 +92,7 @@ class PIIFilter:
             ),
             (
                 "UUID",
-                PIILevel.L2_SENSITIVE,
+                PIILevel.L3_INTERNAL,
                 re.compile(
                     r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
                 ),
@@ -119,24 +119,28 @@ class PIIFilter:
     def mask_text(self, text: str, min_level: PIILevel = PIILevel.L2_SENSITIVE) -> str:
         """Replace all PII at or above min_level with replacement tokens.
 
-        Matches are applied in non-overlapping order: when two patterns span the
-        same region the longest match wins (ties broken by level priority, L1 first).
+        All detected patterns (including those above min_level) claim their regions
+        first to prevent lower-priority patterns from matching within them.  For
+        example, a UUID (L3) at L2 threshold is not replaced but still blocks CARD
+        and PHONE patterns from matching its digit groups.
         The original matched value is never stored after replacement.
         """
         result = text
         offset = 0
-        candidates = [m for m in self.detect(text) if m.level.value <= min_level.value]
+        all_matches = self.detect(text)
         # Longest span first; for equal spans prefer higher-priority (lower level value)
-        candidates.sort(key=lambda m: (m.start, -(m.end - m.start), m.level.value))
+        all_matches.sort(key=lambda m: (m.start, -(m.end - m.start), m.level.value))
         last_end = 0
-        for match in candidates:
+        for match in all_matches:
             if match.start < last_end:
-                continue  # skip overlapping match
+                continue  # skip overlapping regardless of level
+            last_end = match.end  # claim region even if not replacing
+            if match.level.value > min_level.value:
+                continue  # above threshold — region blocked but not masked
             start = match.start + offset
             end = match.end + offset
             result = result[:start] + match.replacement_token + result[end:]
             offset += len(match.replacement_token) - (match.end - match.start)
-            last_end = match.end
         return result
 
     def mask_dict(

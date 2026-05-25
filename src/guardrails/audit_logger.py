@@ -52,7 +52,7 @@ class InMemoryAuditStorage:
         self._records: list[AuditEvent] = []
 
     async def append(self, event: AuditEvent) -> None:
-        self._records.append(event)
+        self._records.append(event.model_copy())
 
     async def query(
         self,

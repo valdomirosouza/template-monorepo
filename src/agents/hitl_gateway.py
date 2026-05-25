@@ -75,8 +75,11 @@ class HITLGateway:
     ) -> None:
         self._audit = audit_logger
         self._broker = broker
-        self._timeout = timeout_seconds or settings.hitl_approval_timeout_seconds
+        self._timeout = (
+            timeout_seconds if timeout_seconds is not None else settings.hitl_approval_timeout_seconds
+        )
         self._requests: dict[str, HITLRequest] = {}
+        self._expired: dict[str, HITLRequest] = {}  # retains expired entries for audit/lookup
         self._lock = asyncio.Lock()
 
     async def submit_for_approval(self, request: HITLRequest) -> HITLRequest:
@@ -163,6 +166,9 @@ class HITLGateway:
 
         # Phase 2: I/O outside lock.
         if expired:
+            async with self._lock:
+                self._requests.pop(decision.request_id, None)
+                self._expired[decision.request_id] = request
             await self._expire_audit(request)
             raise HITLGatewayError(
                 f"Request {decision.request_id} expired before decision was recorded"
@@ -217,7 +223,7 @@ class HITLGateway:
 
     async def get_request(self, request_id: str) -> HITLRequest | None:
         async with self._lock:
-            return self._requests.get(request_id)
+            return self._requests.get(request_id) or self._expired.get(request_id)
 
     async def expire_stale_requests(self) -> list[str]:
         """Mark all PENDING requests past their expires_at as EXPIRED and evict them.
@@ -236,6 +242,7 @@ class HITLGateway:
             await self._expire_single(req)
             async with self._lock:
                 self._requests.pop(req.request_id, None)
+                self._expired[req.request_id] = req
             expired_ids.append(req.request_id)
         return expired_ids
 
