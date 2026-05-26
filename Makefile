@@ -11,6 +11,7 @@ APP         ?= frontend
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
+        new-service \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
         sbom clean help
@@ -197,6 +198,50 @@ openapi-ui: ## Open Swagger UI for the REST API contract
 
 asyncapi-ui: ## Open AsyncAPI Studio for the event contract
 	npx @asyncapi/cli preview docs/api/asyncapi/v1/asyncapi.yaml --port 8083
+
+# ── Service Scaffold ───────────────────────────────────────────────────────
+
+new-service: ## Scaffold a new service: make new-service NAME=foo LANG=python|java|go
+ifndef NAME
+	$(error NAME is required. Usage: make new-service NAME=my-service LANG=python)
+endif
+ifndef LANG
+	$(error LANG is required. Usage: make new-service NAME=my-service LANG=python)
+endif
+	@echo "Scaffolding service '$(NAME)' ($(LANG))..."
+	@$(MAKE) _scaffold-$(LANG)-$(NAME)
+	@$(MAKE) _scaffold-k8s-$(NAME)
+	@echo ""
+	@echo "Done. Next steps:"
+	@echo "  1. Register in services.yaml            (Step 2 in add-new-service.md)"
+	@echo "  2. Add to .github/CODEOWNERS            (Step 3)"
+	@echo "  3. Add scrape job to prometheus.yml     (Step 4)"
+	@echo "  4. Edit services/$(NAME)/README.md      (purpose, schedule, owner)"
+
+_scaffold-python-$(NAME):
+	mkdir -p src/agents/$(NAME)
+	@printf '"""$(NAME) agent."""\n' > src/agents/$(NAME)/__init__.py
+
+_scaffold-java-$(NAME):
+	mkdir -p services/$(NAME)/src/main/java/com/yourorg/$(NAME)/{api,domain,infra,config}
+	mkdir -p services/$(NAME)/src/main/resources
+	mkdir -p services/$(NAME)/src/test/java/com/yourorg/$(NAME)/{unit,integration}
+	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
+
+_scaffold-go-$(NAME):
+	mkdir -p services/$(NAME)/cmd/$(NAME)
+	mkdir -p services/$(NAME)/internal/{handler,domain,infra,config}
+	@printf 'module github.com/yourorg/monorepo/services/$(NAME)\n\ngo 1.23\n' \
+		> services/$(NAME)/go.mod
+	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
+
+_scaffold-k8s-$(NAME):
+	@sed 's/agent-service/$(NAME)/g' infrastructure/k8s/deployment.yaml \
+		> infrastructure/k8s/$(NAME)-deployment.yaml
+	@sed 's/agent-service/$(NAME)/g' infrastructure/k8s/service.yaml \
+		> infrastructure/k8s/$(NAME)-service.yaml
+	@echo "  K8s manifests created: infrastructure/k8s/$(NAME)-{deployment,service}.yaml"
+	@echo "  Edit image name and port in the deployment manifest."
 
 # ── Utilities ──────────────────────────────────────────────────────────────
 

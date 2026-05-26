@@ -13,6 +13,21 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (multi-language template — Block 4)
+
+- `.github/workflows/ci-java.yml`: Java CI pipeline — `lint-java` (Checkstyle + SpotBugs + OWASP dependency-check), `test-java-unit` (JaCoCo ≥ 80%), `test-java-integration` (PostgreSQL + Redis + Kafka services), `build-java` (Spring Boot buildpack); auto-discovers all `services/*/pom.xml`; triggered only on Java/contract file changes
+- `.github/workflows/ci-go.yml`: Go CI pipeline — `lint-go` (golangci-lint + proto drift check), `test-go-unit` (race detector + 80% coverage gate), `test-go-integration` (PostgreSQL + Redis + Kafka services), `build-go`; auto-discovers all `services/*/go.mod`; triggered only on Go/proto file changes
+- `.github/workflows/ci-frontend.yml`: Frontend CI pipeline — `lint-frontend` (ESLint + TypeScript + API client drift check), `test-frontend-unit` (Jest + 80% coverage gate), `test-frontend-e2e` (Playwright), `build-frontend` (Docker image); matrix over `app:` list; triggered only on `frontend/**` or OpenAPI changes
+- `docs/quickstart/add-new-service.md`: step-by-step 10-step checklist for registering a new service — language selection table (Python/Java/Go criteria), directory scaffold, services.yaml registration, CODEOWNERS, Prometheus scrape config, K8s manifests, env vars, CI wiring, Dockerfile templates per language, spec-first requirement, day-1 PR checklist
+- `infrastructure/k8s/service.yaml`: K8s ClusterIP Service manifest template for agent-service
+
+### Changed (multi-language template — Block 4)
+
+- `.github/workflows/ci.yml`: added `contract-drift` job — validates OpenAPI + AsyncAPI specs are parseable, proto files compile, and `services.yaml` schema file references all exist on disk
+- `CONTRIBUTING.md`: added per-language test/lint command table to "Before opening a PR" section; added checklist items for `services.yaml` and Prometheus config when adding new services; linked to `add-new-service.md`
+- `docs/quickstart/README.md`: added `add-new-service.md` row to "After reading your language guide" table; updated label to "read these in order"
+- `Makefile`: added `new-service` scaffold target (`make new-service NAME=foo LANG=python|java|go`); creates directory structure, go.mod, K8s manifests from templates; updated `.PHONY` list
+
 ### Added (multi-language template — Block 3)
 
 - `infrastructure/monitoring/prometheus/prometheus.yml`: Prometheus scrape config — jobs for api-gateway (port 8000 `/metrics`), domain-service (port 8080 `/actuator/prometheus`), event-worker (port 8090 `/metrics`), otel-collector self-telemetry; rule_files wired to golden-signals.yaml; commented stubs for postgres/kafka exporters

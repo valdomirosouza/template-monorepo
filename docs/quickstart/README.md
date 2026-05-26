@@ -15,11 +15,12 @@ working in this monorepo. Start with the guide that matches your stack.
 | A React / Next.js frontend application | [frontend.md](frontend.md)             |
 | A scheduled job or batch processor     | [jobs-worker.md](jobs-worker.md)       |
 
-After reading your language guide, read this:
+After reading your language guide, read these in order:
 
 | Topic                                           | Guide                                            |
 | ----------------------------------------------- | ------------------------------------------------ |
 | Generating code from OpenAPI / AsyncAPI / proto | [contract-driven-dev.md](contract-driven-dev.md) |
+| Registering a new service in the monorepo       | [add-new-service.md](add-new-service.md)         |
 
 ---
 
