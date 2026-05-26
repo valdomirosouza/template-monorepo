@@ -13,6 +13,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (multi-language template — Block 2)
+
+- `docker-compose.yml`: shared development infrastructure stack — PostgreSQL 16, Redis 7, Kafka 7.7 (KRaft), Schema Registry, OTel Collector, Jaeger, Prometheus, Grafana, flagd; healthchecks on all services; named volumes; monorepo-dev network
+- `docker-compose.test.yml`: lightweight integration-test stack with offset ports (PG 5433, Redis 6380, Kafka 9093) and tmpfs for speed; no observability services
+- `.env.example`: fully rewritten — organized into per-language sections (Python, Java, Go, Frontend, Jobs); REQUIRED vs OPTIONAL markers on every var; Spring Boot property name translations; test environment vars (TEST_DATABASE_URL etc.); security generation instructions
+- `frontend/.env.example`: frontend-only env stub — NEXT*PUBLIC*\* vars only, browser-safe HTTP OTel endpoint, flagd OFREP URL; no secrets
+
+### Changed (multi-language template — Block 2)
+
+- `Makefile`: added `infra-up`, `infra-down`, `infra-reset`, `test-infra-up`, `test-infra-down` targets for managing docker-compose stacks; updated .PHONY list
+
 ### Added (multi-language template — Block 1)
 
 - `docs/quickstart/java-backend.md`: Java/Spring Boot developer quickstart — prerequisites, project layout, setup steps, resilience patterns (Resilience4j), PII masking, HITL REST client, Kafka consumer, structured logging, Testcontainers conventions, key ADRs

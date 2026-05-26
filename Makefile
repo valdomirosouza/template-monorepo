@@ -4,7 +4,7 @@ REGISTRY    ?= ghcr.io/org
 SERVICE     ?= api-gateway
 APP         ?= frontend
 
-.PHONY: setup \
+.PHONY: setup infra-up infra-down infra-reset test-infra-up test-infra-down \
         test test-unit test-security lint format build \
         test-python test-unit-python test-security-python lint-python format-python build-python run run-python \
         test-java test-unit-java lint-java format-java build-java run-java \
@@ -19,13 +19,28 @@ help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}'
 
-# ── Setup ──────────────────────────────────────────────────────────────────
+# ── Setup & Infrastructure ─────────────────────────────────────────────────
 
 setup: ## Install all deps, copy .env, start infra stack, run migrations
 	uv sync
 	@[ -f .env ] || cp .env.example .env
 	docker compose up -d
 	uv run alembic upgrade head
+
+infra-up: ## Start shared infrastructure (PostgreSQL, Redis, Kafka, OTel, Grafana, flagd)
+	docker compose up -d
+
+infra-down: ## Stop shared infrastructure (preserves volumes)
+	docker compose down
+
+infra-reset: ## Full infrastructure reset — stops containers AND wipes all volumes
+	docker compose down -v
+
+test-infra-up: ## Start lightweight integration-test infrastructure (offset ports)
+	docker compose -f docker-compose.test.yml up -d
+
+test-infra-down: ## Stop integration-test infrastructure and wipe test volumes
+	docker compose -f docker-compose.test.yml down -v
 
 # ── Python ─────────────────────────────────────────────────────────────────
 
