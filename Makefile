@@ -10,7 +10,7 @@ APP         ?= frontend
         test-java test-unit-java lint-java format-java build-java run-java \
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
-        gen-proto-go gen-api-client-ts \
+        gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
         sbom clean help
@@ -124,11 +124,28 @@ build-go: ## Go: build Docker image (SERVICE=<name>)
 run-go: ## Go: start service with air hot-reload (SERVICE=<name>)
 	air -c services/$(SERVICE)/.air.toml
 
-gen-proto-go: ## Go: regenerate gRPC stubs from proto files
+gen-proto-go: ## Go: regenerate gRPC stubs from proto files into api/grpc/
 	find docs/api/grpc/proto -name "*.proto" | xargs \
 		protoc --go_out=. --go_opt=paths=source_relative \
 		       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		       -I docs/api/grpc/proto
+
+gen-proto-python: ## Python: regenerate gRPC stubs from proto files into src/shared/generated/grpc/
+	mkdir -p src/shared/generated/grpc
+	find docs/api/grpc/proto -name "*.proto" | xargs \
+		uv run python -m grpc_tools.protoc \
+		-I docs/api/grpc/proto \
+		--python_out=src/shared/generated/grpc \
+		--grpc_python_out=src/shared/generated/grpc
+
+gen-sources-java: ## Java: run mvn generate-sources (OpenAPI stubs + Avro classes) (SERVICE=<name>)
+	mvn generate-sources -pl services/$(SERVICE) -am
+
+gen-api-client-python: ## Python: regenerate REST client from OpenAPI spec into src/shared/generated/rest_client/
+	uv run openapi-python-client generate \
+		--path docs/api/openapi/v1/openapi.yaml \
+		--output-path src/shared/generated/rest_client \
+		--overwrite
 
 # ── Frontend ───────────────────────────────────────────────────────────────
 

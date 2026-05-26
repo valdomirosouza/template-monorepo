@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (multi-language template — Block 3)
+
+- `infrastructure/monitoring/prometheus/prometheus.yml`: Prometheus scrape config — jobs for api-gateway (port 8000 `/metrics`), domain-service (port 8080 `/actuator/prometheus`), event-worker (port 8090 `/metrics`), otel-collector self-telemetry; rule_files wired to golden-signals.yaml; commented stubs for postgres/kafka exporters
+- `infrastructure/monitoring/grafana/provisioning/datasources/datasource.yml`: Grafana datasource provisioning — Prometheus as default datasource with exemplar→Jaeger trace linking; Jaeger datasource
+- `infrastructure/monitoring/grafana/provisioning/dashboards/dashboard.yml`: Grafana dashboard provisioning — auto-loads all JSON dashboards from `/var/lib/grafana/dashboards` with 30s hot-reload
+- `docker-compose.yml`: fixed Grafana volume mounts — provisioning directory now correctly wired (`./grafana/provisioning:/etc/grafana/provisioning`) and dashboard JSONs mounted at `/var/lib/grafana/dashboards`
+- `docs/api/grpc/proto/ai_service.proto`: example proto file — `AgentService` (SubmitTask unary + WatchTask server-streaming) and `HITLService` (SubmitForApproval + GetDecision); replaces .gitkeep; includes field numbering rules and generation instructions
+- `docs/quickstart/contract-driven-dev.md`: contract-driven development guide — OpenAPI→TypeScript/Java/Go/Python generation commands; AsyncAPI+Avro consumer patterns per language; gRPC stub generation per language; contract change workflow; CI diff-check pattern; quick-reference table of all generators
+- `docs/quickstart/README.md`: added "After reading your language guide" row linking to contract-driven-dev.md
+
+### Changed (multi-language template — Block 3)
+
+- `Makefile`: added `gen-proto-python`, `gen-sources-java`, `gen-api-client-python` targets; updated `.PHONY` list
+
 ### Added (multi-language template — Block 2)
 
 - `docker-compose.yml`: shared development infrastructure stack — PostgreSQL 16, Redis 7, Kafka 7.7 (KRaft), Schema Registry, OTel Collector, Jaeger, Prometheus, Grafana, flagd; healthchecks on all services; named volumes; monorepo-dev network
