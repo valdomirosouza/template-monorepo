@@ -77,6 +77,12 @@ KAFKA_CONSUMER_LAG = Gauge(
     ["consumer_group", "topic", "partition"],
 )
 
+CIRCUIT_BREAKER_STATE = Gauge(
+    "circuit_breaker_state",
+    "Current circuit breaker state: 0=CLOSED, 0.5=HALF_OPEN, 1=OPEN (REM-014)",
+    ["client"],
+)
+
 ACTIVE_HITL_REQUESTS = Gauge(
     "hitl_active_requests",
     "Number of HITL requests currently pending human review",
@@ -99,6 +105,13 @@ DLQ_MESSAGES_COUNTER = Counter(
     "dlq_messages_total",
     "Total messages routed to Dead Letter Queue",
     ["consumer_group", "topic"],
+)
+
+CONSUMER_HEARTBEAT_TIMESTAMP = Gauge(
+    "consumer_heartbeat_timestamp_seconds",
+    "Unix epoch of last message committed by the consumer (0 = never). "
+    "Alert: time() - this > 300 AND kafka_consumer_lag > 0 (REM-013)",
+    ["consumer_group"],
 )
 
 # ── Feedback loop metrics ────────────────────────────────────────────────────

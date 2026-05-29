@@ -15,6 +15,60 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Security
 
+- **Consumer runtime integrity — DLQ + safe offset commit (REM-012).** Set
+  `enable_auto_commit=False` on the Kafka request consumer — offsets are now committed only
+  after `_handle()` completes (success or DLQ-routed), eliminating the window where
+  auto-commit could advance the offset before processing finished (silent message loss) or
+  where a crashed consumer would reprocess the same message indefinitely without a circuit
+  break (poison-message loop). Added a configurable retry loop (`kafka_consumer_max_retries=3`,
+  exponential backoff) inside `_handle()`; messages that exhaust all attempts are published to
+  `domain.request.dlq` via the injected broker, `DLQ_MESSAGES_COUNTER` is incremented, and the
+  request status is set to `failed`. `RequestConsumer.__init__` now accepts `broker:
+EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_retries`,
+  `kafka_consumer_retry_backoff_seconds`. `domain.request.dlq` channel registered in AsyncAPI
+  spec and `services.yaml`. New runbook `docs/sre/runbooks/dlq-accumulating.md`. Spec updated.
+  35 unit tests (all passing). ISO 8.16, SOC 2 CC7.2/CC9.
+- **Consumer heartbeat metric (REM-013).** Added `CONSUMER_HEARTBEAT_TIMESTAMP` Gauge (epoch
+  seconds) to `src/observability/metrics.py`. Updated in `run()` after every committed message.
+  Alert rule: `time() - consumer_heartbeat_timestamp_seconds > 300 AND kafka_consumer_lag > 0`
+  fires only when silent for 5 min while the queue is non-empty, preventing false positives
+  during quiet periods. ISO 8.16, SOC 2 CC7.2.
+
+### Added
+
+- `docs/compliance/hardening-plan.md` — full waved hardening plan (Waves A–E) with per-wave
+  severity, owner, blocker notes, and ISO/SOC 2 control mappings. Defines Wave B (Prometheus
+  alerting rules, REM-014), Wave C (mTLS/NetworkPolicy REM-003, DAST REM-004, SLSA L3 REM-011),
+  Wave D (CODEOWNERS/DPIA REM-009), and Wave E (Redis HA, key rotation, per-user rate limits).
+- `docs/sre/runbooks/dlq-accumulating.md` — DLQ accumulation runbook: triage, root-cause
+  playbooks (LLM outage, DB failure, injection-guard rejection), replay procedure, escalation
+  matrix.
+
+### Security
+
+- **Prometheus alerting rules — observability closure (REM-014).** Added
+  `infrastructure/monitoring/prometheus/rules/resilience-alerts.yaml` with four new alert rules:
+  `CircuitBreakerOpen` (fires when `circuit_breaker_state == 1` for ≥1 min — fast-fail in
+  progress), `CircuitBreakerHalfOpen` (fires when probing for ≥5 min — upstream still
+  degraded), `ConsumerStale` (heartbeat + lag guard — consumer hung while queue grows; depends
+  on Wave A `consumer_heartbeat_timestamp_seconds` metric), and `ConsumerLagCritical` (>50k
+  messages behind). Added `CIRCUIT_BREAKER_STATE` Gauge to `src/observability/metrics.py`;
+  `CircuitBreaker` now accepts a `name` parameter and emits 0.0/0.5/1.0 on CLOSED/HALF_OPEN/OPEN
+  transitions. `ResilientLLMClientWrapper` defaults to `name="llm"`, `ResilientDBPool` to
+  `name="db"`. Added two missing SLO burn-rate groups to `slo-burn-rate.yaml`: agent action
+  success rate (fast 1h/14.4× + slow 6h/6.0× using `agent_actions_total`) and event consumer
+  DLQ proxy (`EventConsumerDLQBudgetBurning`). 5 new circuit-breaker state metric unit tests,
+  all passing. ISO 8.16, SOC 2 CC7.2.
+
+- **Alertmanager + PagerDuty wiring (REM-002).** `LLMTokenBudgetExceeded90Percent` and all
+  other `severity=critical` alerts now route to PagerDuty when
+  `PAGERDUTY_INTEGRATION_KEY` is set. Added `infrastructure/monitoring/alertmanager/alertmanager.yml`
+  with PagerDuty receiver, `null` default receiver (local dev safety), inhibition rules
+  (critical suppresses same-name warning), and commented Slack stub. Alertmanager service
+  (`prom/alertmanager:v0.27.0`) added to `docker-compose.yml` with `alertmanager_data` volume.
+  Alertmanager block uncommented in `prometheus.yml`. `PAGERDUTY_INTEGRATION_KEY` added to
+  `.env.example` (placeholder; alerts silently dropped in local dev). ISO 8.16, SOC 2 CC7.2.
+
 - **CODEOWNERS governance closure — REM-009 (partial).** Replaced all `@org/*` placeholder
   teams in `.github/CODEOWNERS` with `@valdomirosouza` (the real repo owner), eliminating the
   silent reviewer-assignment failures that kept ~4 ISO controls at "Partial". Added a
