@@ -45,6 +45,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   infrastructure, workflows, or guardrails falls back to mandatory human review — restoring
   segregation of duties / four-eyes (ISO 27001 A.5.3/A.8.32, SOC 2 CC8.1).
 
+### Documentation
+
+- **`CLAUDE.md`** — documented the now-blocking PR governance gates (REM-008/REM-010) so they
+  are discoverable before a PR is opened. Added **§7.1 "CI-Enforced Gates"** (Conventional PR
+  title, CHANGELOG-under-`[Unreleased]`, spec-reference, and `version.txt` ⇄ `pyproject.toml`
+  version-consistency checks, plus their `skip-changelog` / `no-spec` escape-hatch labels and the
+  `ci.yml` job list), expanded the §6 Conventional-Commit `Types` list to match what the
+  `pr-governance` grammar actually accepts (added `perf`, `ci`, `build`, `style`, `revert`), and
+  noted that **`version.txt` is the single source of truth** for the project version. Bumped the
+  behavioral-contract doc header to 2.1.1.
+
 ### Added
 
 - **`docs/compliance/`** — compliance & control-mapping package for enterprise vendor-risk
