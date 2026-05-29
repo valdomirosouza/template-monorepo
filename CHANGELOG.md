@@ -15,6 +15,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Security
 
+- **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
+  `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
+  **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a
+  **spec reference** for feat/fix/security/privacy/perf PRs (`no-spec` / Dependabot exempt); the
+  harness `spec-compliance` gate is now `blocking: true`. Reconciled **`version.txt` → `1.15.0`**
+  (was `1.9.1`; it's read by `config.py`/`Makefile`) and added a **version-consistency** gate that
+  fails any PR changing `version.txt` or `pyproject.toml` without keeping them equal
+  (release-please bot exempt). ISO 5.36, SOC 2 CC5.
+
 - **CI/release supply-chain hardening (REM-006, REM-007).** Added a **Trivy** image CVE scan to
   `ci.yml` (fails the build on fixable CRITICAL/HIGH; ISO 8.7, SOC 2 CC6.8). **SHA-pinned all 17
   GitHub Actions** to commit digests (version comments retained), added least-privilege top-level
