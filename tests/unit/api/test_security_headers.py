@@ -5,7 +5,7 @@ Spec: specs/api/rest-api-design.md (Security Headers)
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from starlette.testclient import TestClient

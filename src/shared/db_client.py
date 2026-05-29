@@ -90,8 +90,8 @@ class ResilientDBPool:
             idle = self._pool.get_idle_size()
             DB_POOL_CONNECTIONS_ACQUIRED.set(total - idle)
             DB_POOL_CONNECTIONS_AVAILABLE.set(idle)
-        except Exception:
-            pass  # never let metric emission fail an operation
+        except Exception:  # noqa: S110 — metric emission must never raise
+            pass
 
     # ── Internal ──────────────────────────────────────────────────────────────
 

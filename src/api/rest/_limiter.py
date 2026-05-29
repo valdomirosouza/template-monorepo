@@ -35,7 +35,7 @@ def _get_rate_limit_key(request: Request) -> str:
             sub = str(payload.get("sub", ""))
             if sub:
                 return f"subject:{sub}"
-        except Exception:
+        except Exception:  # noqa: S110 — intentional: JWT failures fall back to IP silently
             pass
     return f"ip:{get_remote_address(request)}"
 
