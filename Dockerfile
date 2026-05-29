@@ -2,11 +2,11 @@
 # Multi-stage build — target "production" is used by make build and CI.
 
 # ── Stage 1: builder ──────────────────────────────────────────────────────────
-# Pin to exact patch version for reproducible builds.
-# To pin to a full digest (stronger): docker pull python:3.13.7-slim &&
-#   docker inspect --format='{{index .RepoDigests 0}}' python:3.13.7-slim
-# then use: FROM python:3.13.7-slim@sha256:<digest>
-FROM python:3.13.7-slim AS builder
+# Use the floating slim tag so OS-level security patches are picked up
+# automatically. Patch-level pinning (python:3.13.x-slim) locks you to a
+# specific OS image that may carry unfixed CVEs; use digest pinning via a bot
+# (e.g. Renovate) that also runs a security scan before merging the update.
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
@@ -24,7 +24,7 @@ RUN uv sync --no-dev --frozen
 COPY src/ ./src/
 
 # ── Stage 2: production ───────────────────────────────────────────────────────
-FROM python:3.13.7-slim AS production
+FROM python:3.13-slim AS production
 
 # Security: run as non-root user
 RUN groupadd --gid 1001 appgroup && \
