@@ -412,9 +412,7 @@ class TestRequestConsumerDLQ:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 0
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
 
         broker.publish.assert_called_once()
@@ -436,9 +434,7 @@ class TestRequestConsumerDLQ:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 0
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
 
         dlq_payload = broker.publish.call_args[0][1]
@@ -460,9 +456,7 @@ class TestRequestConsumerDLQ:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 0
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
 
         key_arg = broker.publish.call_args[1].get("key") or broker.publish.call_args[0][2]
@@ -483,9 +477,7 @@ class TestRequestConsumerDLQ:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 0
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
 
         state = await store.get("req-dlq-003")
@@ -508,9 +500,7 @@ class TestRequestConsumerDLQ:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 0
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)  # must not raise
 
         state = await store.get("req-dlq-004")
@@ -545,9 +535,7 @@ class TestRequestConsumerRetry:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 3
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 3):
                         await consumer._handle(msg)
 
         broker.publish.assert_not_called()
@@ -573,9 +561,7 @@ class TestRequestConsumerRetry:
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
             with patch("src.workers.request_consumer.AnthropicLLMClient"):
                 with patch("asyncio.sleep", side_effect=capture_sleep):
-                    with patch(
-                        "src.shared.config.settings.kafka_consumer_max_retries", 2
-                    ):
+                    with patch("src.shared.config.settings.kafka_consumer_max_retries", 2):
                         with patch(
                             "src.shared.config.settings.kafka_consumer_retry_backoff_seconds",
                             1.0,
@@ -607,7 +593,9 @@ def _kafka_mock(*msgs):
     return mock
 
 
-def _make_kafka_msg(payload: dict, topic: str = "domain.request.created", partition: int = 0, offset: int = 0):
+def _make_kafka_msg(
+    payload: dict, topic: str = "domain.request.created", partition: int = 0, offset: int = 0
+):
     """Simulate a real Kafka message with topic/partition/offset metadata."""
     envelope = {"trace_id": "trace-run", "payload": payload}
     msg = SimpleNamespace(
@@ -669,7 +657,9 @@ class TestRequestConsumerRun:
 
         with patch("aiokafka.AIOKafkaConsumer", return_value=kafka):
             with patch("aiokafka.TopicPartition", return_value="tp-stub"):
-                with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
+                with patch(
+                    "src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch
+                ):
                     with patch("src.workers.request_consumer.AnthropicLLMClient"):
                         await consumer.run()
 
@@ -702,12 +692,20 @@ class TestRequestConsumerRun:
         consumer._handle = _handle_and_stop
 
         msg1 = SimpleNamespace(
-            value=json.dumps({"trace_id": None, "payload": {"request_id": "r1", "request_text": "first"}}).encode(),
-            topic="domain.request.created", partition=0, offset=0,
+            value=json.dumps(
+                {"trace_id": None, "payload": {"request_id": "r1", "request_text": "first"}}
+            ).encode(),
+            topic="domain.request.created",
+            partition=0,
+            offset=0,
         )
         msg2 = SimpleNamespace(
-            value=json.dumps({"trace_id": None, "payload": {"request_id": "r2", "request_text": "second"}}).encode(),
-            topic="domain.request.created", partition=0, offset=1,
+            value=json.dumps(
+                {"trace_id": None, "payload": {"request_id": "r2", "request_text": "second"}}
+            ).encode(),
+            topic="domain.request.created",
+            partition=0,
+            offset=1,
         )
         kafka = _kafka_mock(msg1, msg2)
 
@@ -735,7 +733,9 @@ class TestRequestConsumerHeartbeat:
 
         with patch("aiokafka.AIOKafkaConsumer", return_value=kafka):
             with patch("aiokafka.TopicPartition", return_value="tp-stub"):
-                with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
+                with patch(
+                    "src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch
+                ):
                     with patch("src.workers.request_consumer.AnthropicLLMClient"):
                         from src.observability.metrics import CONSUMER_HEARTBEAT_TIMESTAMP
                         from src.shared.config import settings
