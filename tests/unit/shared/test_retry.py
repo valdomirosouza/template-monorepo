@@ -91,7 +91,7 @@ class TestCircuitBreakerStateMetric:
     """Verify circuit_breaker_state Gauge is updated on state transitions (REM-014)."""
 
     def test_new_circuit_breaker_initialises_gauge_to_closed(self) -> None:
-        cb = CircuitBreaker(name="test-cb-init")
+        CircuitBreaker(name="test-cb-init")
         value = CIRCUIT_BREAKER_STATE.labels("test-cb-init")._value.get()
         assert value == pytest.approx(0.0)
 
@@ -120,8 +120,7 @@ class TestCircuitBreakerStateMetric:
 
     def test_llm_wrapper_uses_named_llm_circuit_breaker(self) -> None:
         """ResilientLLMClientWrapper defaults to CircuitBreaker(name='llm')."""
-        # The llm gauge label must exist and be accessible
-        wrapper = ResilientLLMClientWrapper(_make_client())
+        ResilientLLMClientWrapper(_make_client())
         # Default CB is named "llm" — gauge label must be present
         value = CIRCUIT_BREAKER_STATE.labels("llm")._value.get()
         assert value == pytest.approx(0.0)  # starts CLOSED
