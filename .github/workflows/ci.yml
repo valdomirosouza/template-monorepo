@@ -389,3 +389,4 @@ jobs:
           exit-code: "1"
           severity: CRITICAL,HIGH
           skip-dirs: ".venv,node_modules,target,.gradle,.git,infrastructure/terraform"
+          trivyignores: .trivyignore
