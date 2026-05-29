@@ -18,11 +18,7 @@ from src.shared.config import settings
 # Content-Security-Policy for a pure JSON API: block all resource loading.
 # If you add a Swagger UI (docs_url) in non-production, add 'self' and the
 # CDN origins used by Swagger's CSS/JS to the relevant directives.
-_CSP_API_ONLY = (
-    "default-src 'none'; "
-    "frame-ancestors 'none'; "
-    "form-action 'none'"
-)
+_CSP_API_ONLY = "default-src 'none'; frame-ancestors 'none'; form-action 'none'"
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

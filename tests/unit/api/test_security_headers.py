@@ -67,9 +67,7 @@ class TestSecurityHeadersProduction:
             mock_settings.app_env = "production"
             client = TestClient(_make_app("production"))
             response = client.get("/test")
-            assert "max-age=63072000" in response.headers.get(
-                "Strict-Transport-Security", ""
-            )
+            assert "max-age=63072000" in response.headers.get("Strict-Transport-Security", "")
             assert "includeSubDomains" in response.headers["Strict-Transport-Security"]
 
 
