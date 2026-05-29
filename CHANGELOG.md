@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.16.0] — 2026-05-29
+
 ### Security
 
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
@@ -1337,7 +1339,8 @@ from`, `zip(..., strict=...)`, unused-variable cleanup) plus `ruff format` norma
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.16.0...HEAD
+[1.16.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.15.0...v1.16.0
 [1.3.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.1...v1.2.0
