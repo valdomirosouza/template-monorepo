@@ -238,7 +238,7 @@ jobs:
 
       - name: Check services.yaml references valid schema files
         run: |
-          python3 - <<'EOF'
+          uv run python - <<'EOF'
           import yaml, sys, pathlib
           catalog = yaml.safe_load(open("services.yaml"))
           missing = []
