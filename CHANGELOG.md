@@ -11,6 +11,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.17.1](https://github.com/valdomirosouza/template-monorepo/compare/v1.17.0...v1.17.1) (2026-05-30)
+
+
+### Documentation
+
+* **setup:** add 014-prompt.md for v1.17.0 hardening programme ([ff13a05](https://github.com/valdomirosouza/template-monorepo/commit/ff13a057749f31e49cfc737216b7f91de82028e5))
+
 ## [Unreleased]
 
 ### Changed
